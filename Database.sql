@@ -1,8 +1,7 @@
-
 CREATE DATABASE ims_db;
 USE ims_db;
 
--- ROLES AND USERS
+-- ROLES & USERS
 
 CREATE TABLE roles (
   role_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -10,15 +9,17 @@ CREATE TABLE roles (
 );
 
 CREATE TABLE users (
-  user_id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(50) PRIMARY KEY,
   name VARCHAR(150) NOT NULL,
-  email VARCHAR(150) UNIQUE NOT NULL,
+  username VARCHAR(150) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
   role_id INT,
+  status VARCHAR(50) DEFAULT 'Active',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (role_id) REFERENCES roles(role_id)
 );
 
--- INVENTORY STRUCTURE
+-- CATEGORIES & PRODUCTS
 
 CREATE TABLE categories (
   category_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -34,6 +35,8 @@ CREATE TABLE products (
   category_id INT,
   FOREIGN KEY (category_id) REFERENCES categories(category_id)
 );
+
+-- WAREHOUSES & INVENTORY
 
 CREATE TABLE warehouses (
   warehouse_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -51,6 +54,7 @@ CREATE TABLE inventory (
 
 -- SUPPLIERS & PURCHASE ORDERS
 
+
 CREATE TABLE suppliers (
   supplier_id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(150) NOT NULL,
@@ -65,12 +69,12 @@ CREATE TABLE purchase_orders (
   FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id)
 );
 
--- CUSTOMERS & SALES ORDERS
+-- CUSTOMERS & ORDERS
+
 
 CREATE TABLE customers (
   customer_id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(150),
-  email VARCHAR(150),
   phone VARCHAR(50)
 );
 
@@ -92,7 +96,9 @@ CREATE TABLE order_items (
   FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
+
 -- INVOICES & PAYMENTS
+
 
 CREATE TABLE invoices (
   invoice_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -110,7 +116,9 @@ CREATE TABLE payments (
   FOREIGN KEY (invoice_id) REFERENCES invoices(invoice_id)
 );
 
+
 -- REPORTS, NOTIFICATIONS, AUDIT LOGS
+
 
 CREATE TABLE reports (
   report_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -120,7 +128,7 @@ CREATE TABLE reports (
 
 CREATE TABLE notifications (
   notification_id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT,
+  user_id VARCHAR(50),
   message TEXT,
   date DATETIME,
   FOREIGN KEY (user_id) REFERENCES users(user_id)
@@ -128,8 +136,17 @@ CREATE TABLE notifications (
 
 CREATE TABLE audit_logs (
   log_id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT,
+  user_id VARCHAR(50),
   action TEXT,
-  timestamp DATETIME,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+
+
+-- INSERT DEFAULT ROLES AND ROOT ADMIN
+
+
+INSERT INTO roles (role_name) VALUES ('Admin'), ('Manager'), ('Cashier');
+
+INSERT INTO users (user_id, name, username, password, role_id)
+VALUES ('ADMIN', 'System Admin', 'root_admin', 'PASS0', 1);
