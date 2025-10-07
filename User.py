@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod #To perform abstraction
 from datetime import datetime
 
 class User(ABC):
@@ -11,7 +11,7 @@ class User(ABC):
         self.user_id = user_id
         self.name = name
         self.email = email
-        self.password = password      # 🔒 hashed in real DB
+        self.password = password      # must be hashed in real DB
         self.role_id = role_id
         self.status = status
         self.created_at = created_at if created_at else datetime.now()
@@ -53,3 +53,4 @@ class User(ABC):
     def display_menu(self):
         """Abstract: each role implements its own operational menu."""
         pass
+
