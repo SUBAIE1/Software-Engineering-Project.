@@ -13,7 +13,7 @@ class Admin(User):
         print("4. System Configuration")
         print("5. Logout")
 
-    
+   
     def create_user(self, db, name, email, password, role_id):
         """
         Inserts a new user record into the database.
