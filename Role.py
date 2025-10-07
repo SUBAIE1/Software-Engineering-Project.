@@ -2,7 +2,7 @@ from datetime import datetime
 
 class Role:
     """
-    Represents a system role ( Admin, Manager, Cashier).
+    Represents a system role (Admin, Manager, Cashier).
     Handles role creation, retrieval, and permission mapping.
     """
 
@@ -24,7 +24,6 @@ class Role:
         print(f"Created: {self.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
 
     #DB
-  
     @staticmethod
     def create_role(db, role_name, description=None):
         cursor = db.cursor()
