@@ -2,7 +2,7 @@
 
 class Admin(User):
     """
-    Admin user — has full privileges for user management, audit logs, and system configuration.
+    Admin user has full privileges for user management, audit logs, and system configuration.
     """
 
     def display_menu(self):
