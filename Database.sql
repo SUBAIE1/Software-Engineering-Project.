@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS se_proj
-USE DATABASE se_proj
+CREATE DATABASE IF NOT EXISTS ims_db
+USE DATABASE ims_db
   
 CREATE TABLE users(
 
@@ -55,5 +55,6 @@ CREATE TABLE audit_logs(--system activiies : tables saves every thing happened i
   --module not sure yet it is catigoty
 
 );
+
 
 
