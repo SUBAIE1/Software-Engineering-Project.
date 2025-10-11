@@ -31,7 +31,7 @@ INSERT INTO roles (role_id, role_name) VALUES ("0000000003","CASHIER")
 
 
 
-CREATE TABLE report(
+CREATE TABLE report(-- skip for now , will deal with it after finishing the core project
 
     report_id char(10) AUTOINCEREMNT PRIMARY KEY ,
     report_type ENUM("Inventory" , "Procurment" , "Requisition" , "System" ,"Audit" ),
@@ -55,4 +55,5 @@ CREATE TABLE audit_logs(--system activiies : tables saves every thing happened i
   --module not sure yet it is catigoty
 
 );
+
 
