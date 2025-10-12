@@ -1,7 +1,7 @@
 from user import User
 
 
-class Manager(User):
+class InventoryManager(User):
 
     def add_warehouse(self, db, warehouse_id, warehouse_name, warehouse_location, manager_id, capacity, status):
         cursor = db.cursor()
