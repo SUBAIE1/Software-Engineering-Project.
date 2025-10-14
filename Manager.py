@@ -1,14 +1,14 @@
 from user import User
-
+from mysql import *
 
 class InventoryManager(User):
 
-    def add_warehouse(self, db, warehouse_id, warehouse_name, warehouse_location, manager_id, capacity, status):
+    def add_warehouse(self, db,  warehouse_name, warehouse_location, manager_id, capacity, status):
         cursor = db.cursor()
 
-        sql = "INSERT INTO warehouse VALUES (%s, %s, %s, %s, %s, %s)"
+        sql = "INSERT INTO warehouse VALUES (%s, %s, %s, %s, %s)"
 
-        cursor.execute(sql, (warehouse_id, warehouse_name, warehouse_location, manager_id, capacity, status))
+        cursor.execute(sql, ( warehouse_name, warehouse_location, manager_id, capacity, status))
         cursor.commit()
         print()
 
@@ -36,7 +36,7 @@ class InventoryManager(User):
 
         sql = "UPDATE warehouses SET status='INACTIVE' WHERE warehouse_id=%s"
 
-        cursor.execute(sql, (warehouse_id)) 
+        cursor.execute(sql, (warehouse_id))
         cursor.commit()
         print()
 
@@ -64,12 +64,12 @@ class InventoryManager(User):
 
     ###################################################################################################################################################################################################
 
-    def add_storage_section(self, db, section_id, warehouse_id, section_name, status):
+    def add_storage_section(self, db, warehouse_id, section_name, status):
         cursor = db.cursor()
 
-        sql = "INSERT INTO storage_sections VALUES (%s, %s, %s, %s, %s)"
+        sql = "INSERT INTO storage_sections VALUES ( %s, %s, %s, %s)"
 
-        cursor.execute(sql, (section_id, warehouse_id, section_name, status))
+        cursor.execute(sql, ( warehouse_id, section_name, status))
         cursor.commit()
         print()
 
@@ -124,14 +124,14 @@ class InventoryManager(User):
         cursor.execute(sql, (stock_id, warehouse_id, section_id, stock_name, product_id, quantity, status))
         db.commit()
         print()
-    
+
     def delete_stock(self, db, stock_id):
         cursor = db.cursor()
         sql = f"DELETE FROM stocks WHERE stock_id=%s"
         cursor.execute(sql, (stock_id))
         db.commit()
         print()
-    
+
     def update_stock(self, db, stock_id, updates: dict):
         cursor = db.cursor()
         fields = ", ".join(f"{k}=%s" for k in updates.keys())
@@ -142,21 +142,21 @@ class InventoryManager(User):
         db.commit()
 
         print()
-    
+
     def deactivate_stock(self, db, stock_id):
         cursor = db.cursor()
         sql = "UPDATE stocks SET status='INACTIVE' WHERE stock_id=%s"
         cursor.execute(sql, (stock_id))
         cursor.commit()
         print()
-    
+
     def reactivate_stock(self, db, stock_id):
         cursor = db.cursor()
         sql = "UPDATE stocks SET status='ACTIVE' WHERE stock_id=%s"
         cursor.execute(sql, (stock_id))
         cursor.commit()
         print()
-    
+
     def review_all_stocks(self, db):
         cursor = db.cursor()
         sql = "SELECT * FROM stocks"
@@ -166,3 +166,38 @@ class InventoryManager(User):
             print(row)
 
 ###################################################################################################################################################################################################
+
+    def add_product(self, db, product_name ,  category_id ,price , quantity):
+
+        cursor = db.cursor()
+
+        sql = "INSERT INTO products VALUES (%s, %s, %s, %s)"
+        cursor.execute(sql, ( product_name, category_id, price, quantity))
+        db.commit()
+        print()
+
+    def delete_product(self, db, product_id):
+        cursor = db.cursor()
+        sql = f"DELETE FROM products WHERE product_id=%s"
+        cursor.execute(sql, (product_id))
+        db.commit()
+        print()
+
+    def update_product(self, db, producrt_id, updates: dict):
+        cursor = db.cursor()
+        fields = ", ".join(f"{k}=%s" for k in updates.keys())
+        values = list(updates.values()) + [producrt_id]
+        sql = f"UPDATE products SET {fields} WHERE producrt_id=%s"
+
+        cursor.execute(sql, values)
+        db.commit()
+
+        print()
+
+    def view_all_products(self, db):
+        cursor = db.cursor()
+        sql = "SELECT * FROM products"
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        for row in rows:
+            print(row)
