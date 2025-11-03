@@ -22,3 +22,12 @@ def process_sale(db, product_id: int, quantity: int, cashier_id: int):
     db.commit()
     print("Sale processed successfully.")
     return True
+
+
+
+# ======================= 2 =======================
+def view_products(db):
+    cur = db.cursor()
+    cur.execute("SELECT product_id, product_name, price, quantity FROM products;")
+    for pid, name, price, qty in cur.fetchall():
+        print(f"{pid}: {name} - {price} ({qty} left)")
