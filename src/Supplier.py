@@ -21,3 +21,11 @@ def add_supplier(db, name: str, contact: str = "", phone: str = "", email: str =
     print(f"[SUP] supplier #{new_id} created.")
     return new_id
 
+
+ def list_active_suppliers(db) -> list[dict]:
+    # List active suppliers for selection
+    cur = db.cursor(dictionary=True)
+    cur.execute("SELECT supplier_id, supplier_name FROM suppliers WHERE status='ACTIVE' ORDER BY supplier_name;")
+    rows = cur.fetchall()
+    print(f"[SUP] {len(rows)} active suppliers found.")
+    return rows
