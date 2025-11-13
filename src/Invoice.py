@@ -28,7 +28,6 @@ def create_invoice_from_po(db, po_id: int, invoice_no: str, inv_date: date, due_
     
 #------------------------------- 2 -------------------------------
 def get_invoice_with_balance(db, invoice_id: int) -> dict | None:
-    # Return invoice totals and remaining balance
     cur = db.cursor(dictionary=True)
     cur.execute("SELECT invoice_id, supplier_id, total_amount, paid_amount, status FROM invoices WHERE invoice_id=%s;", (invoice_id,))
     inv = cur.fetchone()
