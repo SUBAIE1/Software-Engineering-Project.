@@ -23,3 +23,20 @@ def create_invoice_from_po(db, po_id: int, invoice_no: str, inv_date: date, due_
     inv_id = cur.fetchone()[0]
     print(f"[INV] invoice #{inv_id} created for PO #{po_id}.")
     return inv_id
+    
+    
+    
+#------------------------------- 2 -------------------------------
+def get_invoice_with_balance(db, invoice_id: int) -> dict | None:
+    # Return invoice totals and remaining balance
+    cur = db.cursor(dictionary=True)
+    cur.execute("SELECT invoice_id, supplier_id, total_amount, paid_amount, status FROM invoices WHERE invoice_id=%s;", (invoice_id,))
+    inv = cur.fetchone()
+    if not inv:
+        print("[INV] invoice not found.")
+        return None
+    cur.execute("SELECT COALESCE(SUM(amount),0) FROM payments WHERE invoice_id=%s;", (invoice_id,))
+    paid_now = cur.fetchone()[0]
+    inv["remaining"] = float(inv["total_amount"]) - float(paid_now)
+    print(f"[INV] invoice #{invoice_id} has {inv['remaining']} remaining.")
+    return inv
