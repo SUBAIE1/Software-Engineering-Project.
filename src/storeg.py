@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
+import mysql.connector
 class storag_section:
     def __init__(self,section_id,section_name,capacity,status):
         self.status=status
@@ -55,7 +56,45 @@ class storag_section:
        cursor.execute(warehouse_sql, (wherehouse, section_names))
        db.commit()  
        messagebox.showinfo("Success", "it ben added seccesfully")
-       
+
+    def update_section(self):
+        self.label=tk.Label(self.frame,text="enter the name of the section")
+        self.label.pack()
+        self.section_name=tk.Entry(self.frame, width=50)
+        self.section_name.pack()
+        self.label=tk.Label(self.frame,text="enter the name of the section")
+        self.label.pack()
+        self.status=tk.Entry(self.frame, width=50)
+        self.status.pack()
+        self.label=tk.Label(self.frame,text="enter the wherehouse that you want to add the section")
+        self.label.pack()
+        self.house=tk.Entry(self.frame,width=50)
+        self.house.pack()
+        submet=tk.Button(self.frame,text="submet",command=self.update)
+    def update(self):
+        sql = "UPDATE storage_sections SET warehouse_id=%s, section_name=%s, capacity=%s, status=%s ,section id"
+        cursor.execute(sql, (warehouse_id, section_name, capacity, status, section_id))
+        db.commit()
+        messagebox.showinfo("Success", "it ben updated seccesfully")
+    def delete_section(self):
+        self.label=tk.Label(self.frame,text="enter the name of the section")
+        self.label.pack()
+        self.section_name=tk.Entry(self.frame, width=50)
+        self.section_name.pack()
+        self.label=tk.Label(self.frame,text="enter the name of the section")
+        self.label.pack()
+        self.status=tk.Entry(self.frame, width=50)
+        self.status.pack()
+        self.label=tk.Label(self.frame,text="enter the wherehouse that you want to add the section")
+        self.label.pack()
+        self.house=tk.Entry(self.frame,width=50)
+        self.house.pack()
+        submet=tk.Button(self.frame,text="submet",command=self.remove)
+    def remove(self):
+       sql = "DELETE FROM storage_sections WHERE section_id=%s"
+       cursor.execute(sql, (section_id,))
+       db.commit()
+       messagebox.showinfo("Success", "it ben deleated seccesfully")
 
     
        
