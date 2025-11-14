@@ -7,7 +7,6 @@ class storeg():
         self.opration=operation
     def the_opreration():
         print("enter waht do you want to do: ")
-    def sellect_whrehouse():
 
     def sellectiong_section():
         croser=db.croser
@@ -25,3 +24,4 @@ class storeg():
         cursor.execute(query, (name,))
         result = cursor.fetchone()
         
+
