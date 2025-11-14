@@ -1,27 +1,61 @@
-from tkinter as tk
-import mysql.connector
-    
-class storeg():
-    def __init__(self,section_id):
-        def __init
-        self.opration=operation
-    def the_opreration():
-        print("enter waht do you want to do: ")
-
-    def sellectiong_section():
-        croser=db.croser
-        root=tk.TK()
-        root.title("sellictiong section ")
-        frame=tk.Frame(root,width=1000,height=1000)
-        frame.pack()
-        label=tk.Label(frame,text="sellictiong please enter youer section ID: ")
-        label.pack(pady=5,padx=5)
-        enter_ID=tk.entery(frame,width=100)
-        enter_ID.pack()
-        entered=enter_ID.get()
-        cursor = db.cursor()
-        qury="select warehouse_id FROM warehouses WHERE warehouse_name = %s"
-        cursor.execute(query, (name,))
-        result = cursor.fetchone()
+import tkinter as tk
+from tkinter import messagebox
+class storag_section:
+    def __init__(self,section_id,section_name,capacity,status):
+        self.status=status
+        self.capcity=capacity
+        self.section_id=section_id
+        self.section_name=section_name
+        self.root=tk.Tk()
+        self.root.title("storag_section")
+        self.frame=tk.Frame(self.root,width=1000,height=1000)
+        self.frame.pack() 
+        self.add_section()
+        self.root.mainloop()
+    def add_section(self):
+        self.label=tk.Label(self.frame,text="enter the name of the section")
+        self.label.pack()
+        self.section_name=tk.Entry(self.frame, width=50)
+        self.section_name.pack()
+        self.label=tk.Label(self.frame,text="enter the name of the section")
+        self.label.pack()
+        self.status=tk.Entry(self.frame, width=50)
+        self.status.pack()
+        self.label=tk.Label(self.frame,text="enter the wherehouse that you want to add the section")
+        self.label.pack()
+        self.house=tk.Entry(self.frame,width=50)
+        self.house.pack()
+        self.capacity=0
+        submet=tk.Button(self.frame,text="submet",command=self.adding_to_secdatabase)
+    def adding_to_secdatabase(self):
+       section_names = self.section_name.get().strip()
+       if not section_names:
+          messagebox.showwarning("Warning", "Please enter a section name")
+          return
+          statuse = self.status.get().strip()
+       if not statuse:
+          messagebox.showwarning("Warning", "Please enter the status")
+          return
+       wherehouse=self.house.get()
+       if not wherehouse:
+          messagebox.showwarning("Warning", "Please enter the wherehouse")
+          return
         
 
+       cursor = db.cursor()
+       sql = "INSERT INTO storage_section (section_name,status,capacity) VALUES (%s,%s,%s)"
+       cursor.execute(sql, (section_names,statuse,self.capacity,))
+       cursor.execute("SELECT section_id FROM storage_section WHERE section_name=%s", (section_names,))
+       result = cursor.fetchone()
+       if result:
+          section_id = result[0]
+          update_sql = "UPDATE storage_section SET capacity = capacity + 1 WHERE section_id = %s"
+          cursor.execute(update_sql, (section_id,))   
+       warehouse_sql = "INSERT INTO warehouses (warehouse_name, section_name) VALUES (%s, %s)"
+       cursor.execute(warehouse_sql, (wherehouse, section_names))
+       db.commit()  
+       messagebox.showinfo("Success", "it ben added seccesfully")
+       
+
+    
+       
