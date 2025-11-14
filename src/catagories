@@ -38,15 +38,15 @@ class catagorys:
        db.commit()
        messagebox.showinfo("seccess","seccsefully updated")
 
-       def delete_category(self):
+    def delete_category(self):
         label=tk.Label(self.frame,text="pleas enter the catagory that you want to remove")
         label.pack()
         self.add_box=tk.Entry(self.frame,width=50)
         self.add_box.pack()
         subment=tk.Button(self.frame,text="add the catagory",command=self.remove)
         subment.pack()
-        def remove(self):
-           sql = "DELETE FROM categories WHERE category_id=%s"
-           cursor.execute(sql, (category_id,))
-           db.commit()
-           messagebox.showinfo("seccess","seccesfully added")
+     def remove(self):
+        sql = "DELETE FROM categories WHERE category_id=%s"
+        cursor.execute(sql, (category_id,))
+        db.commit()
+        messagebox.showinfo("seccess","seccesfully added")
