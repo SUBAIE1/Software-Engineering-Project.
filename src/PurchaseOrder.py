@@ -6,25 +6,17 @@ from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 from typing import List, Optional, Dict, Any
 
 try:
-	# Try to import the PurchaseOrderItems class for rich item handling
-	# This allows get_items() to return typed objects instead of raw dicts
+	
 	from PurchaseOrderItems import PurchaseOrderItems as POItemModel
 except Exception:
-	# Graceful fallback: if import fails, we'll return raw DB rows instead
 	POItemModel = None  # type: ignore
 
 
-# Decimal precision for monetary calculations (2 decimal places)
-# All money values are rounded to cents using this precision
 _DEC2 = Decimal("0.01")
 
 
 def _dec(v) -> Decimal:
-	"""
-	Convert a value to Decimal with 2 decimal places.
-	Used for consistent monetary calculations throughout the class.
-	Returns Decimal('0.00') if conversion fails.
-	"""
+	
 	if isinstance(v, Decimal):
 		return v.quantize(_DEC2, rounding=ROUND_HALF_UP)
 	try:
@@ -35,7 +27,6 @@ def _dec(v) -> Decimal:
 
 class PurchaseOrder:
 
-	# Valid status values for purchase orders
 	ALLOWED_STATUSES = {"PENDING", "APPROVED", "SHIPPED", "DELIVERED", "CANCELLED"}
 	
 	# This prevents invalid transitions like DELIVERED -> PENDING
@@ -58,19 +49,7 @@ class PurchaseOrder:
 		status: str = "PENDING",
 		total_amount: Decimal = Decimal("0.00"),
 	) -> None:
-		"""
-		Initialize a PurchaseOrder instance.
-		
-		Args:
-			db: MySQL database connection object
-			order_id: Existing order ID (for loaded orders)
-			supplier_id: ID of the supplier
-			created_by_id: ID of the user creating the order
-			order_date: When the order was created (defaults to now)
-			expected_delivery_date: Expected delivery date
-			status: Order status (defaults to PENDING)
-			total_amount: Total order amount (auto-calculated from items)
-		"""
+	
 		self.db = db
 		self.order_id = order_id
 		self.supplier_id = supplier_id
@@ -81,13 +60,7 @@ class PurchaseOrder:
 		self.total_amount = _dec(total_amount)
 
 	def create(self) -> int:
-		"""
-		Create a new purchase order in the database.
-		Inserts into purchase_orders table and sets the order_id.
 		
-		Returns:
-			The newly created order_id
-		"""
 		cursor = self.db.cursor()
 		sql = (
 			"""
@@ -117,16 +90,7 @@ class PurchaseOrder:
 
 	@classmethod
 	def from_db(cls, db, order_id: int) -> Optional["PurchaseOrder"]:
-		"""
-		Load an existing purchase order from the database.
 		
-		Args:
-			db: Database connection
-			order_id: ID of the order to load
-			
-		Returns:
-			PurchaseOrder instance if found, None otherwise
-		"""
 		cur = db.cursor(dictionary=True)
 		cur.execute("SELECT * FROM purchase_orders WHERE order_id=%s", (order_id,))
 		row = cur.fetchone()
@@ -145,16 +109,7 @@ class PurchaseOrder:
 
 	@classmethod
 	def list_by_status(cls, db, status: str) -> List[Dict[str, Any]]:
-		"""
-		Retrieve all purchase orders with a specific status.
 		
-		Args:
-			db: Database connection
-			status: Status to filter by (must be valid)
-			
-		Returns:
-			List of order dictionaries, ordered by date (newest first)
-		"""
 		cur = db.cursor(dictionary=True)
 		if status not in cls.ALLOWED_STATUSES:
 			raise ValueError("invalid status")
@@ -164,23 +119,8 @@ class PurchaseOrder:
 		)
 		return list(cur.fetchall() or [])
 
-	def add_item(self, product_id: int, quantity: int, unit_price) -> int:
-		"""
-		Add a product to this purchase order.
-		Automatically recalculates the order total after adding.
+	def add_item(self, product_id: int, quantity: int, unit_price, uom: str = "UNIT") -> int:
 		
-		Args:
-			product_id: ID of the product to add
-			quantity: Quantity to order (must be > 0)
-			unit_price: Price per unit
-			
-		Returns:
-			The ID of the newly created order item
-			
-		Raises:
-			RuntimeError: If order hasn't been created yet
-			ValueError: If quantity is invalid
-		"""
 		# Validate: order must exist in DB before adding items
 		if not self.order_id:
 			raise RuntimeError("create or load the purchase order before adding items")
@@ -194,10 +134,10 @@ class PurchaseOrder:
 		cur = self.db.cursor()
 		cur.execute(
 			"""
-			INSERT INTO purchase_order_items (order_id, product_id, quantity, unit_price)
-			VALUES (%s, %s, %s, %s)
+			INSERT INTO purchase_order_items (order_id, product_id, quantity, unit_price, uom)
+			VALUES (%s, %s, %s, %s, %s)
 			""",
-			(self.order_id, product_id, int(quantity), str(unit_price)),
+			(self.order_id, product_id, int(quantity), str(unit_price), uom),
 		)
 		self.db.commit()
 		
@@ -211,13 +151,7 @@ class PurchaseOrder:
 		return int(item_id)
 
 	def get_items(self) -> List[Any]:
-		"""
-		Retrieve all items in this purchase order.
 		
-		Returns:
-			List of PurchaseOrderItems objects if available,
-			otherwise returns raw dictionary rows from database
-		"""
 		if not self.order_id:
 			return []
 		
@@ -238,10 +172,12 @@ class PurchaseOrder:
 					POItemModel(
 						id=r["order_item_id"],
 						purchase_order_id=r["order_id"],
+						product_id=r["product_id"],
 						product_sku=None,  # Not stored in DB, can be enriched later
 						product_name=None,  # Not stored in DB, can be enriched later
 						quantity=r["quantity"],
 						unit_price=_dec(r["unit_price"]),
+						uom=r.get("uom", ""),
 					)
 				)
 			return items
@@ -250,13 +186,7 @@ class PurchaseOrder:
 		return rows
 
 	def recalculate_total(self) -> Decimal:
-		"""
-		Recalculate the total amount from all order items.
-		Updates both the instance and the database.
 		
-		Returns:
-			The calculated total amount
-		"""
 		if not self.order_id:
 			return self.total_amount
 		
@@ -282,16 +212,7 @@ class PurchaseOrder:
 		return total
 
 	def change_status(self, new_status: str) -> None:
-		"""
-		Change the order status following the defined workflow.
-		Only valid transitions are allowed (see TRANSITIONS).
 		
-		Args:
-			new_status: The new status to transition to
-			
-		Raises:
-			ValueError: If status is invalid or transition not allowed
-		"""
 		# Validate that the new status is in our allowed set
 		if new_status not in self.ALLOWED_STATUSES:
 			raise ValueError("invalid status")
@@ -314,17 +235,10 @@ class PurchaseOrder:
 		self.status = new_status
 
 	def approve(self) -> None:
-		"""Approve a pending purchase order."""
 		self.change_status("APPROVED")
 
 	def cancel(self) -> None:
-		"""
-		Cancel a purchase order.
-		Only PENDING or APPROVED orders can be cancelled.
 		
-		Raises:
-			ValueError: If order cannot be cancelled in current state
-		"""
 		if self.status not in {"PENDING", "APPROVED"}:
 			raise ValueError("can only cancel PENDING or APPROVED orders")
 		cur = self.db.cursor()
@@ -336,12 +250,7 @@ class PurchaseOrder:
 		self.status = "CANCELLED"
 
 	def set_expected_delivery(self, when: date | str | None) -> None:
-		"""
-		Set or update the expected delivery date.
 		
-		Args:
-			when: Date object, ISO date string, or None to clear
-		"""
 		if isinstance(when, str):
 			when = date.fromisoformat(when)
 		cur = self.db.cursor()
@@ -353,13 +262,7 @@ class PurchaseOrder:
 		self.expected_delivery_date = when
 
 	def to_dict(self) -> Dict[str, Any]:
-		"""
-		Convert the purchase order to a dictionary.
-		Useful for JSON serialization and API responses.
 		
-		Returns:
-			Dictionary with all order fields
-		"""
 		return {
 			"order_id": self.order_id,
 			"supplier_id": self.supplier_id,
