@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 import mysql.connector
-class catagorys:
+class categories:
     def __init__(self, category_name="", category_id=0):
         self.category_name=category_name
         self.category_id=category_id
@@ -24,7 +24,13 @@ class catagorys:
         if not self.category_name:
             messagebox.showwarning("","please enter the the catagory that you want to add")
             return
-        messagebox.showinfo("","the catagory have been added succesfully")
+        cursor = db.cursor()
+        sql = "INSERT INTO categories (category_name) VALUES (%s)"
+        cursor.execute(sql, (category_names,))
+        cursor.execute("SELECT created_at FROM categories WHERE category_id = LAST_INSERT_ID()")
+        created_time = cursor.fetchone()[0]
+        db.commit()
+        messagebox.showinfo("Success", f"Product added successfully\nCreated At: {created_time}")
     def update_category(self):
 
         label = tk.Label(self.frame, text="Enter the category ID to update")
@@ -33,7 +39,6 @@ class catagorys:
         self.catID = tk.Entry(self.frame, width=50)
         self.catID.pack()
 
-        # Only one field exists (category_name), so no combo box needed
         next_btn = tk.Button(self.frame, text="Next", command=self.open_update_category_window)
         next_btn.pack()
 
@@ -44,7 +49,6 @@ class catagorys:
             messagebox.showerror("Error", "Please enter the ID")
             return
 
-        # Create popup window
         self.c_window = tk.Toplevel(self.frame)
         self.c_window.title("Update Category")
 
@@ -71,14 +75,27 @@ class catagorys:
         self.c_window.destroy()
 
     def delete_category(self):
-        label=tk.Label(self.frame,text="pleas enter the catagory that you want to remove")
-        label.pack()
-        self.add_box=tk.Entry(self.frame,width=50)
-        self.add_box.pack()
-        subment=tk.Button(self.frame,text="add the catagory",command=self.remove)
-        subment.pack()
-        def remove(self):
-           sql = "DELETE FROM categories WHERE category_id=%s"
-           cursor.execute(sql, (category_id,))
-           db.commit()
-           messagebox.showinfo("seccess","seccesfully added")
+   
+       name = tk.simpledialog.askstring("Delete Category", "Enter the category name to delete:")
+       if not name:
+          messagebox.showerror("Error", "Please enter a category name")
+          return
+
+   
+       cursor.execute("SELECT category_id FROM categories WHERE category_name=%s", (name,))
+       result = cursor.fetchone()
+       if not result:
+          messagebox.showerror("Error", "Category not found")
+          return
+
+       category_id = result[0]
+
+    
+       cursor.execute("UPDATE categories SET deleted_at = NOW() WHERE category_id=%s", (category_id,))
+       db.commit()
+
+   
+       cursor.execute("SELECT deleted_at FROM categories WHERE category_id=%s", (category_id,))
+       deleted_time = cursor.fetchone()[0]
+
+       messagebox.showinfo("Deleted", f"Category '{name}' deleted successfully\nDeleted At: {deleted_time}")
