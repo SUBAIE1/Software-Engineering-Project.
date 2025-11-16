@@ -65,7 +65,7 @@ class warehous:
         db.commit()
         messagebox.showinfo("Success", "warehouse added successfully")
         addmaneger=tk.Button(self.frame,text="add maneger",command=add_maneger)
-    def add__to_manegerDatabase(self):
+        def add__to_manegerDatabase(self):
             maneger_name=manegerN.get()
             if not maneger_name:
                 messagebox.showwarning("warning","please enter the maneger name")
@@ -76,6 +76,10 @@ class warehous:
             maneger_id=result2[0]
             insert_name("INSERT INTO warehoueses (maneger_id) VALUES(%s,%s)")
             valuse=(insert_name,(result2,))
+        cursor.execute("SELECT created_at FROM warehousese WHERE warehouse_id = LAST_INSERT_ID()")
+        created_time = cursor.fetchone()[0]
+        db.commit()
+        messagebox.showinfo("Success", f"Product added successfully\nCreated At: {created_time}")
     def update_warehouse(self):
 
         self.label = tk.Label(self.frame, text="What do you want to update?")
@@ -106,7 +110,7 @@ class warehous:
             messagebox.showerror("Error", "Please fill all fields")
             return
 
-        # Create new popup window
+       
         self.new_window = tk.Toplevel(self.frame)
         self.new_window.title("Update " + field)
 
@@ -136,25 +140,24 @@ class warehous:
         self.new_window.destroy()
 
 
-    def delete_warehouse(warehouse_id):
-        self.label=tk.Label(self.frame,text="please enter the warehouse name")
-        self.label.pack()
-        self.houseN=tk.Entry(self.frame,width=50)
-        self.houseN.pack()
+    def delete_warehouse(self):
+       name = tk.simpledialog.askstring("Delete Warehouse", "Enter the warehouse name to delete:")
+       if not name:
+          messagebox.showerror("Error", "Please enter a warehouse name")
+          return
 
-        self.label=tk.Label(self.frame,text="please enter the warehouse location")
-        self.label.pack()
-        self.houseL=tk.Entry(self.frame,width=50)
-        self.houseL.pack()
+       cursor.execute("SELECT warehouse_id FROM warehouses WHERE warehouse_name=%s", (name,))
+       result = cursor.fetchone()
+       if not result:
+          messagebox.showerror("Error", "Warehouse not found")
+          return
 
-        self.label=tk.Label(self.frame,text="please enter the warehouse stats")
-        self.label.pack()
-        self.houseS=tk.Enrtry(self.frame,width=50)
-        self.houseS.pack()
+       warehouse_id = result[0]
 
-        submet=tk.Button(self.frame,text="submet",command=update)
-    def deleat(self):
-       sql = "DELETE FROM warehouses WHERE warehouse_id=%s"
-       cursor.execute(sql, (warehouse_id,))
+       cursor.execute("UPDATE warehouses SET deleted_at = NOW() WHERE warehouse_id=%s", (warehouse_id,))
        db.commit()
-       messagebox.showinfo("seccesfully","ahve ben deleated seccesfully")
+
+       cursor.execute("SELECT deleted_at FROM warehouses WHERE warehouse_id=%s", (warehouse_id,))
+       deleted_time = cursor.fetchone()[0]
+
+       messagebox.showinfo("Deleted", f"Warehouse '{name}' deleted successfully\nDeleted At: {deleted_time}")
