@@ -13,7 +13,7 @@ class storag_section:
         self.frame.pack() 
         self.add_section()
         self.root.mainloop()
-    def add_section(self):
+    def add_storag_section(self):
         self.label=tk.Label(self.frame,text="enter the name of the section")
         self.label.pack()
         self.section_name=tk.Entry(self.frame, width=50)
@@ -28,7 +28,7 @@ class storag_section:
         self.house.pack()
         self.capacity=0
         submet=tk.Button(self.frame,text="submet",command=self.adding_to_secdatabase)
-    def adding_to_secdatabase(self):
+    def adding_to_storag_sectionDatabase(self):
        section_names = self.section_name.get().strip()
        if not section_names:
           messagebox.showwarning("Warning", "Please enter a section name")
@@ -54,8 +54,10 @@ class storag_section:
           cursor.execute(update_sql, (section_id,))   
        warehouse_sql = "INSERT INTO warehouses (warehouse_name, section_name) VALUES (%s, %s)"
        cursor.execute(warehouse_sql, (wherehouse, section_names))
+       cursor.execute("SELECT created_at FROM storag_section WHERE section_id = LAST_INSERT_ID()")
+       created_time = cursor.fetchone()[0]
        db.commit()  
-       messagebox.showinfo("Success", "it ben added seccesfully")
+       messagebox.showinfo("Success", f"Product added successfully\nCreated At: {created_time}")
 
     def update_section(self):
 
@@ -116,25 +118,27 @@ class storag_section:
         self.s_window.destroy()
 
 
-    def delete_section(self):
-        self.label=tk.Label(self.frame,text="enter the name of the section")
-        self.label.pack()
-        self.section_name=tk.Entry(self.frame, width=50)
-        self.section_name.pack()
-        self.label=tk.Label(self.frame,text="enter the name of the section")
-        self.label.pack()
-        self.status=tk.Entry(self.frame, width=50)
-        self.status.pack()
-        self.label=tk.Label(self.frame,text="enter the wherehouse that you want to add the section")
-        self.label.pack()
-        self.house=tk.Entry(self.frame,width=50)
-        self.house.pack()
-        submet=tk.Button(self.frame,text="submet",command=self.remove)
-    def remove(self):
-       sql = "DELETE FROM storage_sections WHERE section_id=%s"
-       cursor.execute(sql, (section_id,))
-       db.commit()
-       messagebox.showinfo("Success", "it ben deleated seccesfully")
+    #def delete_storageSection(self):
+      # name = tk.simpledialog.askstring("Delete Section", "Enter the section name to delete:")
+      # if not name:
+        #  messagebox.showerror("Error", "Please enter a section name")
+       #   return
 
+     #  cursor.execute("SELECT section_id FROM storage_sections WHERE section_name=%s", (name,))
+      # result = cursor.fetchone()
+      # if not result:
+       #   messagebox.showerror("Error", "Section not found")
+        #  return
+
+      # section_id = result[0]
+
+    
+      # cursor.execute("UPDATE storage_sections SET deleted_at = NOW() WHERE section_id=%s", (section_id,))
+      # db.commit()
+
+      # cursor.execute("SELECT deleted_at FROM storage_sections WHERE section_id=%s", (section_id,))
+      # deleted_time = cursor.fetchone()[0]
+
+      # messagebox.showinfo("Deleted", f"Section '{name}' deleted successfully\nDeleted At: {deleted_time}")
     
        
