@@ -1,104 +1,133 @@
-from user import User
-import mysql.connector
+from tkinter import messagebox  
 
-class Admin(User):
-    """
-        1-create user
-        2-delete user
-        4-modify user (role , ....)
-        5-view audit_logs
-        """
+from src.users.base_page import BasePage  
+from src.users.user import User  
+from src.users.log_service import LogService 
+import mysql.connector  
+from src.users.database_connection import DatabaseConnection 
+import datetime 
 
-    def create_user(self , db , username , user_id, password, role_id ):
+now = datetime.now() 
+formatted = now.strftime("%Y, %m, %d, %H, %M, %S")  
 
-        cursor = db.cursor()
-        sql = """
-        INSERT INTO users (username, user_id, password, role_id, last_login, created_at) VALUES (%s, %s, %s, %s, %s, %s);
-        """
-        cursor.execute(sql , (username , user_id, password, role_id))
-        cursor.commit()
-        print(f"User {self.username} , with user_id {self.user_id} , and password {self.password} is created successfully and assigned to {self.rolename} role")
+class Admin(User): 
 
-    def delete_user(self , db ,  user_id ):
 
-        cursor = db.cursor()
-        sql = "DELET FROM users WHERE user_id = %s"
+    def __init__(self, username, password, role_id, status='ACTIVE', failed_attempts=0,  
+                 locked_until=None, last_login=None, last_logout=None, created_at=formatted, db=None):  
+        super().__init__( 
+            username=username, 
+            password=password, 
+            role_id=role_id, 
+            status=status,  
+            db=DatabaseConnection() 
+        )  
 
-        cursor.execute(sql, (user_id))
-        cursor.commit()
-        print(
-            f"User {self.username} , with user_id {self.user_id} , and password {self.password} is deleted successfully")
 
-    def update_user(self, db, user_id, updates: dict):
-        """
-        Dynamically updates multiple fields in one go.
-        Example: {"username": "newname", "role_id": 2}
-        """
-        fields = ", ".join(f"{k}=%s" for k in updates.keys())
-        values = list(updates.values()) + [user_id]
-        sql = f"UPDATE users SET {fields} WHERE user_id=%s"
-        cursor = db.cursor()
-        cursor.execute(sql, values)
-        db.commit()
-        print(f"[ADMIN] Updated user {user_id} with fields {list(updates.keys())}")
 
-    def deacivate_user(self , db, user_id):
-        cursor = db.cursor()
-        #MUST CHECK IF THE USER IS ACTIVE FIRST
 
-        sql = "UPDATE  users SET status = 'INACTIVE' WHERE user_id = %s AND status = 'ACTIVE'"
-        cursor.execute (sql , user_id)
-        db.commit()
-        print(f"User {self.username} , with ID {self.user_id} has been deactivated successfully")
 
-    def reactviate_user(self , db, user_id):
-        cursor = db.cursor()
 
-        sql = "UPDATE users SET status = 'ACTIVE' WHERE user_id = %s AND status = 'INACTIVE'"
+    def create_user(self , db , username , password, role_id ):  
 
-        cursor.execute(sql , user_id)
-        cursor.commit()
+        try:  
+            self.db.execute_query("INSERT INTO users (username ,password, role_id, last_login, created_at) VALUES (%s, %s, %s, %s, %s);", (username , password, role_id, datetime.utcnow(), datetime.utcnow()))  
 
-        print(f"User {self.username} , with ID {self.user_id} has been reactivated successfully")
+            print(f"User {self.username} , and password {self.password} is created successfully and assigned to {self.rolename} role")  
+            self.logger.log_action(self.user_id, f"Created new user '{username}' with role_id {role_id}")  
 
-    def list_all_users(self , db):
+        except Exception as e:  
+            messagebox.showerror("Error", str(e))  
 
-        cursor = db.cursor()
 
-        sql = "SELECT * FROM users"
-        cursor.execute(sql)
-        for row in cursor.fetchall():
-            print(row)
+    def delete_user(self , db ,  username ):  
 
-    def list_users_by_attribute(self , db):
-        pass
+        try:  
+            self.db.execute_query("DELET FROM users WHERE username = %s);", (username,))  
 
-    def reset_password(self , db, user_id , password):
-        cursor = db.cursor()
+        except Exception as e:  
+            messagebox.showerror("Error", str(e))  
+            print( f"User {self.username}  and password {self.password} is deleted successfully")  
 
-        sql = "UPDATE users SET password = %s WHERE user_id = %s"
 
-        cursor.execute(sql , (user_id , password))
-        db.commit()
-        print(f"Password of user {self.username} , with ID {self.user_id} has been reset to {self.password} successfully")
+    def update_user(self, db, username, updates: dict):  
 
-    def assign_role(self , db , user_id , role_id):
-        """
-        CHANGING ROLE OF THE USER.
-        """
-        cursor = db.cursor()
+        cursor = None  
+        try:  
+            fields = ", ".join(f"{k}=%s" for k in updates.keys())  
+            values = list(updates.values()) + [username]  
+            sql = f"UPDATE users SET {fields} WHERE username=%s"  
+            cursor = db.cursor()  
+            cursor.execute(sql, values)  
+            db.commit()  
+            print(f"[ADMIN] Updated user {username} with fields {list(updates.keys())}")  
 
-        sql = " UPDATE users SET role_id = %s WHERE user_id = %s  "
-        cursor.execute(sql , (role_id, user_id))
-        db.commit()
-        #I need to show the role name instead of role_id
-        print(f"Role of user {self.username} having ID {self.user_id} is changed to {self.role_id} successfully")
+        except Exception as e:  
+            messagebox.showerror("Error", str(e))  
+        finally:  
+            try:  
+                if cursor:  
+                    cursor.close()  
+            except Exception:  
+                pass  
 
-    def view_audit_logs(self, db):
+    def reset_password(self , db, username, password):  
+        try:  
+            self.db.execute_query("UPDATE users SET password = %s WHERE username = %s" ,(password, username))  
+            print(f"Password of user {self.username}  has been reset to {self.password} successfully")  
+        except Exception as e:  
+            print(f"[ERROR][reset_password] {e}")  
 
-        cursor = db.cursor()
-        #order by whatever needed
-        sql = "SELECT * FROM audit_logs"
-        cursor.execute(sql)
-        for row in cursor.fetchall():
-            print(row)
+    def update_role(self , db , username, role_id):  
+        try:  
+            self.db.execute_query("UPDATE roles SET role_id=%s WHERE username=%s" ,(role_id,username) )  
+
+            print(f"[ADMIN] Updated role {role_id} for user {self.username} .")  
+        except Exception as e:  
+            print(f"[ERROR][update_role] {e}")  
+
+
+    def reactviate_user(self , db, username):  
+
+        try:  
+            self.db.execute_query("UPDATE users SET status = 'ACTIVE' WHERE username = %s AND status = 'INACTIVE'" , (username,))  
+            print(f"User {self.username}  has been reactivated successfully")  
+        except Exception as e:  
+            print(f"[ERROR][reactviate_user] {e}")  
+
+
+    def list_all_users(self , db):  
+        try:  
+            self.db.fetch_all("SELECT username FROM users;")  
+        except Exception as e:  
+            print(f"[ERROR][list_all_users] {e}")  
+
+    def list_users_by_attribute(self , db):  
+        pass  
+
+    def view_audit_logs(self, db):  
+        cursor = None  
+        try:  
+            cursor = db.cursor()  
+            sql = "SELECT * FROM audit_logs"  
+            cursor.execute(sql)  
+            for row in cursor.fetchall():  
+                print(row)  
+
+        except Exception as e:  
+            messagebox.showerror("Error", str(e))  
+        finally:  
+            try:  
+                if cursor:  
+                    cursor.close()  
+            except Exception:  
+                messagebox.showerror("Error", str(e))  
+
+    def deactivate_user(self , db, username):  
+        try:  
+            self.db.execute_query("UPDATE  users SET status = 'INACTIVE' WHERE username = %s AND status = 'ACTIVE'", (  
+                username,))  
+            print(f"User {self.username}  has been deactivated successfully")  
+
+        except Exception as e:  
+            messagebox.showerror("Error", str(e))
