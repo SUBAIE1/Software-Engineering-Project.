@@ -65,7 +65,7 @@ class warehous:
         db.commit()
         messagebox.showinfo("Success", "warehouse added successfully")
         addmaneger=tk.Button(self.frame,text="add maneger",command=add_maneger)
-        def add__to_manegerDatabase(self):
+    def add__to_manegerDatabase(self):
             maneger_name=manegerN.get()
             if not maneger_name:
                 messagebox.showwarning("warning","please enter the maneger name")
@@ -77,28 +77,65 @@ class warehous:
             insert_name("INSERT INTO warehoueses (maneger_id) VALUES(%s,%s)")
             valuse=(insert_name,(result2,))
     def update_warehouse(self):
-        self.label=tk.Label(self.frame,text="please enter the warehouse name")
-        self.label.pack()
-        self.houseN=tk.Entry(self.frame,width=50)
-        self.houseN.pack()
 
-        self.label=tk.Label(self.frame,text="please enter the warehouse location")
+        self.label = tk.Label(self.frame, text="What do you want to update?")
         self.label.pack()
-        self.houseL=tk.Entry(self.frame,width=50)
-        self.houseL.pack()
 
-        self.label=tk.Label(self.frame,text="please enter the warehouse stats")
+        self.choice = ttk.Combobox(
+            self.frame,
+            values=["warehouse_name", "warehouse_location", "status"],
+            state="readonly",
+            width=47
+        )
+        self.choice.pack()
+
+        self.label = tk.Label(self.frame, text="Enter warehouse ID")
         self.label.pack()
-        self.houseS=tk.Enrtry(self.frame,width=50)
-        self.houseS.pack()
+        self.houseID = tk.Entry(self.frame, width=50)
+        self.houseID.pack()
 
-        submet=tk.Button(self.frame,text="submet",command=update)
+        submit = tk.Button(self.frame, text="Next", command=self.open_update_window)
+        submit.pack()
+
+
+    def open_update_window(self):
+        field = self.choice.get()
+        warehouse_id = self.houseID.get()
+
+        if field == "" or warehouse_id == "":
+            messagebox.showerror("Error", "Please fill all fields")
+            return
+
+        # Create new popup window
+        self.new_window = tk.Toplevel(self.frame)
+        self.new_window.title("Update " + field)
+
+        tk.Label(self.new_window, text=f"Enter new {field}:").pack()
+
+        self.newValue = tk.Entry(self.new_window, width=50)
+        self.newValue.pack()
+
+        tk.Button(self.new_window, text="Update", command=self.update).pack()
+
+
     def update(self):
 
-        sql = "UPDATE warehouses SET warehouse_name=%s, warehouse_location=%s, manager_id=%s, capacity=%s, status=%s WHERE warehouse_id=%s"
-        cursor.execute(sql, (name, location, manager_id, capacity, status, warehouse_id))
+        field = self.choice.get()
+        warehouse_id = self.houseID.get()
+        new_value = self.newValue.get()
+
+        if new_value == "":
+            messagebox.showerror("Error", "Please enter the new value")
+            return
+
+        sql = f"UPDATE warehouses SET {field}=%s WHERE warehouse_id=%s"
+        cursor.execute(sql, (new_value, warehouse_id))
         db.commit()
-        messagebox.showinfo("seccesfully","ahve ben updated seccesfully")
+
+        messagebox.showinfo("successfully", "Has been updated successfully")
+        self.new_window.destroy()
+
+
     def delete_warehouse(warehouse_id):
         self.label=tk.Label(self.frame,text="please enter the warehouse name")
         self.label.pack()
