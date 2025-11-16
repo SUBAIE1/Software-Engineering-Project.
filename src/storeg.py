@@ -58,24 +58,64 @@ class storag_section:
        messagebox.showinfo("Success", "it ben added seccesfully")
 
     def update_section(self):
-        self.label=tk.Label(self.frame,text="enter the name of the section")
+
+        self.label = tk.Label(self.frame, text="What do you want to update?")
         self.label.pack()
-        self.section_name=tk.Entry(self.frame, width=50)
-        self.section_name.pack()
-        self.label=tk.Label(self.frame,text="enter the name of the section")
+
+        self.section_choice = ttk.Combobox(
+            self.frame,
+            values=["section_name", "status", "warehouse_id", "capacity"],
+            state="readonly",
+            width=47
+        )
+        self.section_choice.pack()
+
+        self.label = tk.Label(self.frame, text="Enter section ID")
         self.label.pack()
-        self.status=tk.Entry(self.frame, width=50)
-        self.status.pack()
-        self.label=tk.Label(self.frame,text="enter the wherehouse that you want to add the section")
-        self.label.pack()
-        self.house=tk.Entry(self.frame,width=50)
-        self.house.pack()
-        submet=tk.Button(self.frame,text="submet",command=self.update)
-    def update(self):
-        sql = "UPDATE storage_sections SET warehouse_id=%s, section_name=%s, capacity=%s, status=%s ,section id"
-        cursor.execute(sql, (warehouse_id, section_name, capacity, status, section_id))
+        self.sectionID = tk.Entry(self.frame, width=50)
+        self.sectionID.pack()
+
+        submit = tk.Button(self.frame, text="Next", command=self.open_update_section_window)
+        submit.pack()
+
+
+    def open_update_section_window(self):
+        field = self.section_choice.get()
+        section_id = self.sectionID.get()
+
+        if field == "" or section_id == "":
+            messagebox.showerror("Error", "Please fill all fields")
+            return
+
+        self.s_window = tk.Toplevel(self.frame)
+        self.s_window.title("Update " + field)
+
+        tk.Label(self.s_window, text=f"Enter new {field}:").pack()
+
+        self.section_new_value = tk.Entry(self.s_window, width=50)
+        self.section_new_value.pack()
+
+        tk.Button(self.s_window, text="Update", command=self.update_section_final).pack()
+
+
+    def update_section_final(self):
+
+        field = self.section_choice.get()
+        section_id = self.sectionID.get()
+        new_value = self.section_new_value.get()
+
+        if new_value == "":
+            messagebox.showerror("Error", "Please enter the new value")
+            return
+
+        sql = f"UPDATE storage_sections SET {field}=%s WHERE section_id=%s"
+        cursor.execute(sql, (new_value, section_id))
         db.commit()
-        messagebox.showinfo("Success", "it ben updated seccesfully")
+
+        messagebox.showinfo("Success", "Section updated successfully")
+        self.s_window.destroy()
+
+
     def delete_section(self):
         self.label=tk.Label(self.frame,text="enter the name of the section")
         self.label.pack()
