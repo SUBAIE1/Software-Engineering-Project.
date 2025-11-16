@@ -1,7 +1,6 @@
--- ============================
--- INVENTORY MANAGEMENT SYSTEM - FINAL VERSION
--- ============================
--- --uom:unit of measurement.
+-- ===============================================================
+-- INVENTORY MANAGEMENT SYSTEM 
+-- ===============================================================
 
 DROP DATABASE IF EXISTS ims_db;
 CREATE DATABASE ims_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -12,55 +11,82 @@ CREATE TABLE roles (
     role_id INT AUTO_INCREMENT PRIMARY KEY,
     role_name ENUM('ADMIN', 'INVENTORY_MANAGER', 'PURCHASE_MANAGER','REQUESTER') UNIQUE NOT NULL,
     description VARCHAR(255),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB COMMENT='User roles defining permissions';
 
--- USERS
+-- USERS  (make username the PRIMARY KEY)
 CREATE TABLE users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(100) NOT NULL UNIQUE,
+    username VARCHAR(100) NOT NULL,
     password VARCHAR(255) NOT NULL,
     status ENUM('ACTIVE', 'INACTIVE') DEFAULT 'ACTIVE',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     failed_attempts INT NULL DEFAULT 0,
     locked_until DATETIME NULL,
     last_login DATETIME DEFAULT NULL,
     last_logout DATETIME DEFAULT NULL,
     deleted_at DATETIME DEFAULT NULL,
     role_id INT NOT NULL,
+    PRIMARY KEY (username),
     FOREIGN KEY (role_id) REFERENCES roles(role_id)
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB COMMENT='System users linked to roles';
 
 CREATE INDEX idx_users_role_id ON users(role_id);
+CREATE INDEX idx_users_status ON users(status);
+CREATE INDEX idx_users_created_at ON users(created_at);
 
--- AUDIT LOGS
+
+CREATE TABLE credentials (
+    credential_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    FOREIGN KEY (username) REFERENCES users(username)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB COMMENT='Extended user credential information for security management';
+
+
+-- AUDIT LOGS  (remove UNIQUE; align ON DELETE policy to RESTRICT for user FKs)
 CREATE TABLE audit_logs (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    username VARCHAR(100) NOT NULL,
     action VARCHAR(255) NOT NULL,
     action_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (username) REFERENCES users(username)
+        ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB COMMENT='Tracks user actions';
 
-CREATE INDEX idx_audit_user_id ON audit_logs(user_id);
+CREATE INDEX idx_audit_username ON audit_logs(username);
 
--- WAREHOUSES
+-- WAREHOUSES  (ON DELETE RESTRICT for user FK; keep nullable so reassignment possible)
 CREATE TABLE warehouses (
     warehouse_id INT AUTO_INCREMENT PRIMARY KEY,
     warehouse_name VARCHAR(255) NOT NULL,
     warehouse_location VARCHAR(255) NOT NULL,
-    manager_id INT,
+    manager_username VARCHAR(100) NULL,
     capacity INT CHECK (capacity >= 0),
     status ENUM('ACTIVE', 'INACTIVE') DEFAULT 'ACTIVE',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME DEFAULT NULL,
-    FOREIGN KEY (manager_id) REFERENCES users(user_id)
-        ON DELETE SET NULL ON UPDATE CASCADE
+    FOREIGN KEY (manager_username) REFERENCES users(username)
+        ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB COMMENT='Warehouse master data';
 
-CREATE INDEX idx_warehouse_manager_id ON warehouses(manager_id);
+CREATE INDEX idx_warehouse_manager_username ON warehouses(manager_username);
+CREATE INDEX idx_warehouse_status ON warehouses(status);
+
+
+CREATE TABLE managers (
+    manager_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    status ENUM('ACTIVE', 'INACTIVE') DEFAULT 'ACTIVE',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (username) REFERENCES users(username)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB COMMENT='System managers linked to user accounts';
 
 -- STORAGE SECTIONS
 CREATE TABLE storage_sections (
@@ -70,81 +96,71 @@ CREATE TABLE storage_sections (
     capacity INT DEFAULT NULL CHECK (capacity IS NULL OR capacity >= 0),
     status ENUM('ACTIVE', 'INACTIVE') DEFAULT 'ACTIVE',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (warehouse_id) REFERENCES warehouses(warehouse_id)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB COMMENT='Subsections of warehouses';
 
 CREATE INDEX idx_section_warehouse_id ON storage_sections(warehouse_id);
-
-
-CREATE TABLE stock (
-    stock_id INT AUTO_INCREMENT PRIMARY KEY,
-    stock_name VARCHAR(255) NOT NULL,
-    section_id INT NOT NULL,
-    warehouse_id INT NOT NULL,
-    product_id INT NOT NULL,
-    quantity INT DEFAULT 0 CHECK (quantity >= 0),
-    status ENUM('AVAILABLE', 'RESERVED', 'DAMAGED', 'EXPIRED') DEFAULT 'AVAILABLE',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME DEFAULT NULL,
-    FOREIGN KEY (product_id) REFERENCES products(product_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (section_id) REFERENCES storage_sections(section_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (warehouse_id) REFERENCES warehouses(warehouse_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB COMMENT='Tracks stock of products across warehouses and sections';
-
+CREATE INDEX idx_section_status ON storage_sections(status);
 
 -- CATEGORIES
 CREATE TABLE categories (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     category_name VARCHAR(150) NOT NULL UNIQUE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB COMMENT='Product categories';
 
--- PRODUCTS
+-- PRODUCTS  (uom -> VARCHAR(50))
 CREATE TABLE products (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
     product_name VARCHAR(150) NOT NULL,
     category_id INT,
     price DECIMAL(10,2) DEFAULT 0.00 CHECK (price >= 0),
     quantity INT DEFAULT 0 CHECK (quantity >= 0),
-    uom TEXT NOT NULL,
+    uom VARCHAR(50) NOT NULL,
     status ENUM('AVAILABLE', 'UNAVAILABLE') DEFAULT 'AVAILABLE',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME DEFAULT NULL,
     FOREIGN KEY (category_id) REFERENCES categories(category_id)
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB COMMENT='Product details';
 
 CREATE INDEX idx_products_category_id ON products(category_id);
+CREATE INDEX idx_products_name ON products(product_name);
+CREATE INDEX idx_products_status ON products(status);
 
 -- PROJECTS
 CREATE TABLE projects (
     project_id INT AUTO_INCREMENT PRIMARY KEY,
     project_name VARCHAR(150) NOT NULL,
     description TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB COMMENT='Project records used in requisitions';
 
--- REQUISITION
+-- REQUISITION  (align requester FK ON DELETE to RESTRICT for consistency)
 CREATE TABLE requisition (
     requisition_id INT AUTO_INCREMENT PRIMARY KEY,
-    requester_id INT NOT NULL,
+    requester_username VARCHAR(100) NOT NULL,
     project_id INT,
     status ENUM('PENDING','APPROVED','REJECTED','ISSUED','CANCELLED') DEFAULT 'PENDING',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     submitted_at DATETIME DEFAULT NULL,
     approved_at DATETIME DEFAULT NULL,
     deleted_at DATETIME DEFAULT NULL,
-    FOREIGN KEY (requester_id) REFERENCES users(user_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (requester_username) REFERENCES users(username)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (project_id) REFERENCES projects(project_id)
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB COMMENT='Material requisitions';
 
-CREATE INDEX idx_requisition_requester_id ON requisition(requester_id);
+CREATE INDEX idx_requisition_requester_username ON requisition(requester_username);
+CREATE INDEX idx_requisition_status ON requisition(status);
+CREATE INDEX idx_requisition_created_at ON requisition(created_at);
 
 -- REQUISITION ITEMS
 CREATE TABLE requisition_items (
@@ -152,6 +168,8 @@ CREATE TABLE requisition_items (
     requisition_id INT NOT NULL,
     item_id INT NOT NULL,
     quantity INT NOT NULL CHECK (quantity > 0),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (requisition_id) REFERENCES requisition(requisition_id)
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (item_id) REFERENCES products(product_id)
@@ -170,35 +188,44 @@ CREATE TABLE suppliers (
     address TEXT DEFAULT NULL,
     status ENUM('ACTIVE', 'INACTIVE') DEFAULT 'ACTIVE',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME DEFAULT NULL
 ) ENGINE=InnoDB COMMENT='Suppliers providing materials';
 
--- PURCHASE ORDERS
+CREATE INDEX idx_suppliers_status ON suppliers(status);
+
+-- PURCHASE ORDERS  (user FK ON DELETE RESTRICT for consistency)
 CREATE TABLE purchase_orders (
     order_id INT AUTO_INCREMENT PRIMARY KEY,
     supplier_id INT NOT NULL,
-    created_by_id INT NOT NULL,
+    created_by VARCHAR(100) NOT NULL,
     order_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     expected_delivery_date DATE DEFAULT NULL,
     status ENUM('PENDING', 'APPROVED', 'SHIPPED', 'DELIVERED', 'CANCELLED') DEFAULT 'PENDING',
     total_amount DECIMAL(10, 2) DEFAULT 0.00 CHECK (total_amount >= 0),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME DEFAULT NULL,
     FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
-    FOREIGN KEY (created_by_id) REFERENCES users(user_id)
+    FOREIGN KEY (created_by) REFERENCES users(username)
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB COMMENT='Purchase orders from suppliers';
 
 CREATE INDEX idx_po_supplier_id ON purchase_orders(supplier_id);
+CREATE INDEX idx_po_status ON purchase_orders(status);
+CREATE INDEX idx_po_order_date ON purchase_orders(order_date);
 
--- PURCHASE ORDER ITEMS
+-- PURCHASE ORDER ITEMS  (uom -> VARCHAR(50))
 CREATE TABLE purchase_order_items (
     order_item_id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
     product_id INT NOT NULL,
     quantity INT NOT NULL CHECK (quantity > 0),
     unit_price DECIMAL(10, 2) NOT NULL CHECK (unit_price >= 0),
-    uom TEXT NOT NULL,
+    uom VARCHAR(50) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES purchase_orders(order_id)
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(product_id)
@@ -217,11 +244,15 @@ CREATE TABLE invoices (
     total_amount DECIMAL(10, 2) NOT NULL CHECK (total_amount >= 0),
     status ENUM('UNPAID', 'PAID', 'PARTIALLY_PAID', 'VOID') DEFAULT 'UNPAID',
     file_path VARCHAR(255) DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES purchase_orders(order_id)
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB COMMENT='Supplier invoices for POs';
 
 CREATE INDEX idx_invoice_order_id ON invoices(order_id);
+CREATE INDEX idx_invoice_status ON invoices(status);
+CREATE INDEX idx_invoice_date ON invoices(invoice_date);
 
 -- PAYMENTS
 CREATE TABLE payments (
@@ -231,6 +262,8 @@ CREATE TABLE payments (
     amount DECIMAL(10, 2) NOT NULL CHECK (amount > 0),
     payment_method ENUM('BANK_TRANSFER', 'CHEQUE','CASH') DEFAULT 'BANK_TRANSFER',
     transaction_ref VARCHAR(255) DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (invoice_id) REFERENCES invoices(invoice_id)
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB COMMENT='Payments made for invoices';
@@ -245,51 +278,8 @@ INSERT INTO roles (role_name, description) VALUES
 ('REQUESTER', 'Employee who requests materials or items');
 
 INSERT INTO users (username, password, role_id, status)
-VALUES ('root_admin', 'placeholder_hashed_pw', 1, 'ACTIVE');
-
-
-# CREATE TABLE goods_receipts (--?
-#     grn_id INT AUTO_INCREMENT PRIMARY KEY,
-#     order_id INT NOT NULL,
-#     received_by INT NOT NULL,
-#     received_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-#     status ENUM('OPEN','POSTED','CANCELLED') DEFAULT 'OPEN',
-#     notes VARCHAR(255),
-#     FOREIGN KEY (order_id) REFERENCES purchase_orders(order_id)
-#         ON DELETE RESTRICT ON UPDATE CASCADE,
-#     FOREIGN KEY (received_by) REFERENCES users(user_id)
-#         ON DELETE RESTRICT ON UPDATE CASCADE
-# ) ENGINE=InnoDB;
-#
-# CREATE TABLE goods_receipt_items (--?
-#     grn_item_id INT AUTO_INCREMENT PRIMARY KEY,
-#     grn_id INT NOT NULL,
-#     product_id INT NOT NULL,
-#     uom_id INT NOT NULL,
-#     quantity DECIMAL(18,6) NOT NULL,
-#     warehouse_id INT NOT NULL,
-#     section_id INT NULL,
-#     bin_id INT NULL,
-#     lot_id INT NULL,
-#     FOREIGN KEY (grn_id) REFERENCES goods_receipts(grn_id)
-#         ON DELETE CASCADE ON UPDATE CASCADE,
-#     FOREIGN KEY (product_id) REFERENCES products(product_id)
-#         ON DELETE RESTRICT ON UPDATE CASCADE,
-#     FOREIGN KEY (uom_id) REFERENCES uom(uom_id)
-#         ON DELETE RESTRICT ON UPDATE CASCADE,
-#     FOREIGN KEY (warehouse_id) REFERENCES warehouses(warehouse_id)
-#         ON DELETE RESTRICT ON UPDATE CASCADE,
-#     FOREIGN KEY (section_id) REFERENCES storage_sections(section_id)
-#         ON DELETE SET NULL ON UPDATE CASCADE,
-#     FOREIGN KEY (bin_id) REFERENCES bins(bin_id)
-#         ON DELETE SET NULL ON UPDATE CASCADE,
-#     FOREIGN KEY (lot_id) REFERENCES lot(lot_id)
-#         ON DELETE SET NULL ON UPDATE CASCADE
-# ) ENGINE=InnoDB;
-
-
-
-
+VALUES ('root1', 'pass', 1, 'ACTIVE'),
+       ('root inventory manager','inv pass' ,2, 'ACTIVE' );
 
 
 
