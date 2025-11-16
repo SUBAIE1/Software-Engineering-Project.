@@ -25,18 +25,50 @@ class catagorys:
             messagebox.showwarning("","please enter the the catagory that you want to add")
             return
         messagebox.showinfo("","the catagory have been added succesfully")
-    def update_category(slef):
-        label=tk.Label(self.frame,text="pleas enter the catagory that you want to add")
+    def update_category(self):
+
+        label = tk.Label(self.frame, text="Enter the category ID to update")
         label.pack()
-        self.add_box=tk.Entry(self.frame,width=50)
-        self.add_box.pack()
-        subment=tk.Button(self.frame,text="add the catagory",command=self.update)
-        subment.pack()
+
+        self.catID = tk.Entry(self.frame, width=50)
+        self.catID.pack()
+
+        # Only one field exists (category_name), so no combo box needed
+        next_btn = tk.Button(self.frame, text="Next", command=self.open_update_category_window)
+        next_btn.pack()
+
+    def open_update_category_window(self):
+        category_id = self.catID.get()
+
+        if category_id == "":
+            messagebox.showerror("Error", "Please enter the ID")
+            return
+
+        # Create popup window
+        self.c_window = tk.Toplevel(self.frame)
+        self.c_window.title("Update Category")
+
+        tk.Label(self.c_window, text="Enter new category name:").pack()
+
+        self.newValue = tk.Entry(self.c_window, width=50)
+        self.newValue.pack()
+
+        tk.Button(self.c_window, text="Update", command=self.update).pack()
+
     def update(self):
-       sql = "UPDATE categories SET category_name=%s WHERE category_id=%s"
-       cursor.execute(sql, (name, category_id))
-       db.commit()
-       messagebox.showinfo("seccess","seccsefully updated")
+        category_id = self.catID.get()
+        new_value = self.newValue.get()
+
+        if new_value == "":
+            messagebox.showerror("Error", "Please enter the new value")
+            return
+
+        sql = "UPDATE categories SET category_name=%s WHERE category_id=%s"
+        cursor.execute(sql, (new_value, category_id))
+        db.commit()
+
+        messagebox.showinfo("Success", "Successfully updated")
+        self.c_window.destroy()
 
     def delete_category(self):
         label=tk.Label(self.frame,text="pleas enter the catagory that you want to remove")
@@ -45,8 +77,8 @@ class catagorys:
         self.add_box.pack()
         subment=tk.Button(self.frame,text="add the catagory",command=self.remove)
         subment.pack()
-     def remove(self):
-        sql = "DELETE FROM categories WHERE category_id=%s"
-        cursor.execute(sql, (category_id,))
-        db.commit()
-        messagebox.showinfo("seccess","seccesfully added")
+        def remove(self):
+           sql = "DELETE FROM categories WHERE category_id=%s"
+           cursor.execute(sql, (category_id,))
+           db.commit()
+           messagebox.showinfo("seccess","seccesfully added")
