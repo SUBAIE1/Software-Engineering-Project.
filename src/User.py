@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from src.users.database_connection import DatabaseConnection
+from connection import DatabaseConnection
 
 
 class User(ABC):
@@ -32,16 +32,20 @@ class User(ABC):
         self.db = db or DatabaseConnection()
 
 
+    def _get_identifier(self):
+        """Return the primary key identifier for this user."""
+        return self.username
+
     def login(self):
         self.last_login = datetime.utcnow()
-        query = "UPDATE users SET last_login = %s WHERE user_id = %s"
+        query = "UPDATE users SET last_login = %s WHERE username = %s"
         self.db.execute_query(query, (self.last_login, self._get_identifier()))
         print(f"[INFO] {self.username} logged in at {self.last_login}")
 
     def logout(self):
         """Record user logout."""
         self.last_logout = datetime.utcnow()
-        query = "UPDATE users SET last_logout = %s WHERE user_id = %s"
+        query = "UPDATE users SET last_logout = %s WHERE username = %s"
         self.db.execute_query(query, (self.last_logout, self._get_identifier()))
         print(f"[INFO] {self.username} logged out at {self.last_logout}")
 
@@ -49,4 +53,3 @@ class User(ABC):
     def perform_role_duties(self):
         """Each subclass must define its role-specific behavior."""
         raise NotImplementedError
-
