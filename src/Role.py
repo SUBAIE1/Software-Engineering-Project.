@@ -2,7 +2,7 @@ from datetime import datetime
 from tkinter import messagebox
 
 from mysql.connector import Error
-from src.users.database_connection import DatabaseConnection
+from connection import DatabaseConnection
 now = datetime.now()
 formatted = now.strftime("%Y, %m, %d, %H, %M, %S")
 
@@ -89,5 +89,3 @@ class Role:
         except Error as e:
             db.rollback()
             print(f"[ERROR] Failed to delete role ID {role_id}: {e}")
-
-
