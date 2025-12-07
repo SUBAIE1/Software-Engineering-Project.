@@ -1,5 +1,5 @@
 -- ===============================================================
--- INVENTORY MANAGEMENT SYSTEM 
+-- INVENTORY MANAGEMENT SYSTEM
 -- ===============================================================
 
 DROP DATABASE IF EXISTS ims_db;
@@ -279,6 +279,7 @@ INSERT INTO roles (role_name, description) VALUES
 
 INSERT INTO users (username, password, role_id, status)
 VALUES ('root1', 'pass', 1, 'ACTIVE'),
+       ('pur1' ,'pass2' , 2 , 'ACTIVE' ),
        ('root inventory manager','inv pass' ,2, 'ACTIVE' );
 
 
