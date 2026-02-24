@@ -43,11 +43,11 @@ class Admin(User):
     def delete_user(self , db ,  username ):  
 
         try:  
-            self.db.execute_query("DELET FROM users WHERE username = %s);", (username,))  
+            self.db.execute_query("DELETE FROM users WHERE username = %s", (username,))  
+            print( f"User {username} is deleted successfully")  
 
         except Exception as e:  
             messagebox.showerror("Error", str(e))  
-            print( f"User {self.username}  and password {self.password} is deleted successfully")  
 
 
     def update_user(self, db, username, updates: dict):  

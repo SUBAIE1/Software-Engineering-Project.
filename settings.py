@@ -30,7 +30,7 @@ class Settings:
         self.LOG_FILE: Optional[str] = os.getenv("LOG_FILE", None)
         
         # Paths
-        self.BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
+        self.BASE_DIR: Path = Path(__file__).resolve().parent
         self.DATA_DIR: Path = self.BASE_DIR / "data"
         self.LOGS_DIR: Path = self.BASE_DIR / "logs"
         

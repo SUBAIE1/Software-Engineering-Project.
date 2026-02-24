@@ -1,7 +1,7 @@
-"""User repository for database operations on users table."""
+"""User repository for database operations."""
 
 from typing import Optional, Dict, List
-from connection import DatabaseConnection
+from config.database_connection import DatabaseConnection
 
 
 class UserRepository:
@@ -47,7 +47,7 @@ class UserRepository:
         return self.db.execute_query(sql, values)
     
     def delete(self, username: str) -> int:
-        """Soft delete a user by setting deleted_at."""
+        """Soft delete a user."""
         sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE username = %s"
         return self.db.execute_query(sql, (username,))
     

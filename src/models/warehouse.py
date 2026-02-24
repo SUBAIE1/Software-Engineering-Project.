@@ -1,4 +1,4 @@
-"""Warehouse model for storage facilities."""
+"""Warehouse and storage models."""
 
 from datetime import datetime
 from typing import Optional

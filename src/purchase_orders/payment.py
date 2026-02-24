@@ -1,15 +1,11 @@
-#Record supplier payment and adjust invoice status ----1----
-#List all payments tied to an invoice ----2----
-#Calculate supplier’s outstanding vs paid totals ----3----
-
-
+"""Payment related functions."""
 
 from datetime import datetime
 from decimal import Decimal
 
 
-#--------------------------- 1 ---------------------------
 def record_payment(db, invoice_id: int, amount: float, method: str = "BANK_TRANSFER") -> int:
+    """Record supplier payment."""
     cur = db.cursor()
     cur.execute("SELECT total_amount, paid_amount FROM invoices WHERE invoice_id=%s;", (invoice_id,))
     total, paid = [Decimal(x) for x in cur.fetchone()]
@@ -23,17 +19,19 @@ def record_payment(db, invoice_id: int, amount: float, method: str = "BANK_TRANS
     db.commit()
     cur.execute("SELECT LAST_INSERT_ID();")
     pay_id = cur.fetchone()[0]
-    print(f"[PAY] payment #{pay_id} recorded for invoice #{invoice_id}.")
+    print(f"[PAY] payment #{pay_id} recorded.")
     return pay_id
-    
-#--------------------------- 2 ---------------------------
-def payments_for_invoice(db, invoice_id: int) -> list[dict]:
+
+
+def payments_for_invoice(db, invoice_id: int) -> list:
+    """List payments for invoice."""
     cur = db.cursor(dictionary=True)
     cur.execute("SELECT * FROM payments WHERE invoice_id=%s ORDER BY payment_date DESC;", (invoice_id,))
     return cur.fetchall()
 
-#--------------------------- 3 ---------------------------
+
 def supplier_balance(db, supplier_id: int) -> dict:
+    """Get supplier balance."""
     cur = db.cursor(dictionary=True)
     cur.execute(
         "SELECT COALESCE(SUM(total_amount - paid_amount),0) AS outstanding, "

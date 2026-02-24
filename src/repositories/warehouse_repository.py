@@ -1,7 +1,7 @@
-"""Warehouse repository for database operations on warehouses and storage sections."""
+"""Warehouse repository for database operations."""
 
 from typing import Optional, Dict, List
-from connection import DatabaseConnection
+from config.database_connection import DatabaseConnection
 
 
 class WarehouseRepository:

@@ -1,7 +1,7 @@
-"""Requisition repository for database operations on requisitions."""
+"""Requisition repository for database operations."""
 
 from typing import Optional, Dict, List
-from connection import DatabaseConnection
+from config.database_connection import DatabaseConnection
 
 
 class RequisitionRepository:
@@ -21,7 +21,7 @@ class RequisitionRepository:
         return self.db.fetch_one(sql, (requisition_id,), dictionary=True)
     
     def find_by_requester(self, requester_username: str) -> List[Dict]:
-        """Find all requisitions by a specific requester."""
+        """Find all requisitions by a requester."""
         sql = """
             SELECT r.*, p.project_name 
             FROM requisition r
@@ -74,25 +74,6 @@ class RequisitionRepository:
         """Soft delete a requisition."""
         sql = "UPDATE requisition SET deleted_at = CURRENT_TIMESTAMP WHERE requisition_id = %s"
         return self.db.execute_query(sql, (requisition_id,))
-    
-    def approve(self, requisition_id: int) -> int:
-        """Approve a requisition."""
-        sql = """
-            UPDATE requisition 
-            SET status = 'APPROVED', approved_at = CURRENT_TIMESTAMP 
-            WHERE requisition_id = %s
-        """
-        return self.db.execute_query(sql, (requisition_id,))
-    
-    def reject(self, requisition_id: int) -> int:
-        """Reject a requisition."""
-        sql = "UPDATE requisition SET status = 'REJECTED' WHERE requisition_id = %s"
-        return self.db.execute_query(sql, (requisition_id,))
-    
-    def cancel(self, requisition_id: int) -> int:
-        """Cancel a requisition."""
-        sql = "UPDATE requisition SET status = 'CANCELLED' WHERE requisition_id = %s"
-        return self.db.execute_query(sql, (requisition_id,))
 
 
 class RequisitionItemRepository:
@@ -102,7 +83,7 @@ class RequisitionItemRepository:
         self.db = db or DatabaseConnection()
     
     def find_by_requisition(self, requisition_id: int) -> List[Dict]:
-        """Find all items for a specific requisition."""
+        """Find all items for a requisition."""
         sql = """
             SELECT ri.*, p.product_name, p.uom 
             FROM requisition_items ri

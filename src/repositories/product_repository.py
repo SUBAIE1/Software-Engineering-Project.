@@ -1,7 +1,7 @@
-"""Product repository for database operations on products table."""
+"""Product repository for database operations."""
 
 from typing import Optional, Dict, List
-from connection import DatabaseConnection
+from config.database_connection import DatabaseConnection
 
 
 class ProductRepository:
@@ -72,6 +72,6 @@ class ProductRepository:
         return self.db.execute_query(sql, (product_id,))
     
     def update_quantity(self, product_id: int, quantity_change: int) -> int:
-        """Update product quantity (can be positive or negative)."""
+        """Update product quantity."""
         sql = "UPDATE products SET quantity = quantity + %s WHERE product_id = %s"
         return self.db.execute_query(sql, (quantity_change, product_id))

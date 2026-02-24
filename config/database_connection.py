@@ -22,15 +22,17 @@ class DatabaseConnection:
         conn = getattr(self, "db_connection", None)
         if conn is None or not conn.is_connected():
             try:
+                from settings import settings
+                db_config = settings.get_db_config()
                 self.db_connection = mysql.connector.connect(
-                    host="0,0,0,0",#Fill them with your databse configurations
-                    port= 0000,
-                    user="",
-                    password="",
-                    database="ims_db",
+                    host=db_config["host"],
+                    port=db_config["port"],
+                    user=db_config["user"],
+                    password=db_config["password"],
+                    database=db_config["database"],
                     autocommit=False,
                 )
-                print("Connected successfully to ims_db.")
+                print(f"Connected successfully to {db_config['database']}.")
             except Error as exc:
                 messagebox.showerror("Database error", f"Unable to connect: {exc}")
                 self.db_connection = None
